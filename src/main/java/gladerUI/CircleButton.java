@@ -1,4 +1,4 @@
-package mainwindow;
+package gladerUI;
 
 import javax.swing.*;
 import java.awt.*;

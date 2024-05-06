@@ -2,30 +2,86 @@ package mainwindow;
 
 import java.awt.*;
 import javax.swing.*;
-import mainwindow.CircleButton;
+
+import gladerUI.CircleButton;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 public class ColorSelectJPanel extends JPanel {
+
+    private JPanel leftContainer, rightContainer;
+    private JPanel leftJPanel, rightJPanel;
+    private CircleButton selectedColor;
+
+    // 静态变量来存储当前选中的颜色
+    private static Color currentSelectedColor = Color.WHITE;
+
     private final Color[] colors = {
             Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW, Color.ORANGE,
-            Color.CYAN, Color.MAGENTA, Color.PINK, Color.LIGHT_GRAY, Color.DARK_GRAY,
-            Color.WHITE, Color.BLACK, new Color(255, 150, 0), new Color(0, 255, 150),
-            new Color(150, 0, 255), new Color(255, 255, 0), new Color(255, 0, 255),
-            new Color(0, 255, 255), new Color(128, 0, 0), new Color(0, 128, 0),
-            new Color(0, 0, 128), new Color(128, 128, 0), new Color(128, 0, 128),
-            new Color(0, 128, 128), new Color(255, 128, 0), new Color(0, 255, 128),
-            new Color(128, 255, 0), new Color(0, 128, 255), new Color(128, 0, 255),
-            new Color(255, 0, 128)
+            Color.CYAN, Color.MAGENTA, Color.PINK, new Color(123,0,0), Color.DARK_GRAY,
+            Color.WHITE, Color.BLACK, Color.GRAY, Color.CYAN.darker(), Color.MAGENTA.darker(),
+            Color.ORANGE.darker(), Color.PINK.darker(), Color.BLUE.darker(), Color.GREEN.darker(),
+            Color.YELLOW.darker(), Color.RED.darker()
     };
 
     public ColorSelectJPanel() {
-        setLayout(null);
-        for (int i = 0; i < 3; i++) {
+        setLayout(new BorderLayout()); // 设置1行2列的GridLayout，用于容纳两个列
+        leftContainer = new JPanel(new BorderLayout()); // 左容器使用BorderLayout
+        rightContainer = new JPanel(new BorderLayout()); // 右容器使用BorderLayout
+
+        leftJPanel = new JPanel();
+        rightJPanel = new JPanel();
+        rightJPanel.setLayout(new GridLayout(2, 10)); // 设置2行10列的GridLayout
+        selectedColor = new CircleButton("");
+        selectedColor.setBackground(currentSelectedColor); // 设置选中的颜色为当前选中的颜色
+
+        // 添加左侧按钮点击事件监听器
+        leftJPanel.add(selectedColor);
+        selectedColor.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                // 弹出颜色选择器
+                Color newColor = JColorChooser.showDialog(ColorSelectJPanel.this, "Choose Color", currentSelectedColor);
+                if (newColor != null) {
+                    setCurrentSelectedColor(newColor); // 设置当前选中的颜色为用户选择的颜色
+                    selectedColor.setBackground(newColor); // 设置左侧选定颜色
+                }
+            }
+        });
+
+        // 添加右侧按钮点击事件监听器
+        ActionListener buttonListener = new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                CircleButton clickedButton = (CircleButton) e.getSource();
+                Color clickedColor = clickedButton.getBackground();
+                setCurrentSelectedColor(clickedColor); // 设置当前选中的颜色
+                selectedColor.setBackground(clickedColor); // 设置左侧选定颜色
+            }
+        };
+
+        // 在右侧面板中添加带有监听器的按钮
+        for (int i = 0; i < 2; i++) {
             for (int j = 0; j < 10; j++) {
                 CircleButton button = new CircleButton("");
                 button.setBackground(colors[i * 10 + j]);
-                button.setBounds(j * 25, i * 25, 20, 20);
-                add(button);
+                button.addActionListener(buttonListener); // 添加监听器
+                rightJPanel.add(button);
             }
         }
+
+        leftContainer.add(leftJPanel, BorderLayout.CENTER);
+        rightContainer.add(rightJPanel, BorderLayout.CENTER);
+
+        add(leftContainer,BorderLayout.WEST);
+        add(rightContainer,BorderLayout.CENTER);
+    }
+
+    // 静态方法用于返回当前选中的颜色
+    public static Color getCurrentSelectedColor() {
+        return currentSelectedColor;
+    }
+
+    // 静态方法用于设置当前选中的颜色
+    public static void setCurrentSelectedColor(Color color) {
+        currentSelectedColor = color;
     }
 }
