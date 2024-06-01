@@ -11,7 +11,7 @@ public class ColorSelectJPanel extends JPanel {
 
     private JPanel leftContainer, rightContainer;
     private JPanel leftJPanel, rightJPanel;
-    private CircleButton selectedColor;
+    private static CircleButton selectedColor;
 
     // 静态变量来存储当前选中的颜色
     private static Color currentSelectedColor = Color.WHITE;
@@ -31,7 +31,7 @@ public class ColorSelectJPanel extends JPanel {
 
         leftJPanel = new JPanel();
         rightJPanel = new JPanel();
-        rightJPanel.setLayout(new GridLayout(2, 10)); // 设置2行10列的GridLayout
+        rightJPanel.setLayout(new GridLayout(2, 10, 1, 3)); // 设置2行10列的GridLayout，并添加5像素的水平和垂直间隙
         selectedColor = new CircleButton("");
         selectedColor.setBackground(currentSelectedColor); // 设置选中的颜色为当前选中的颜色
 
@@ -71,8 +71,8 @@ public class ColorSelectJPanel extends JPanel {
         leftContainer.add(leftJPanel, BorderLayout.CENTER);
         rightContainer.add(rightJPanel, BorderLayout.CENTER);
 
-        add(leftContainer,BorderLayout.WEST);
-        add(rightContainer,BorderLayout.CENTER);
+        add(leftContainer, BorderLayout.WEST);
+        add(rightContainer, BorderLayout.CENTER);
     }
 
     // 静态方法用于返回当前选中的颜色
@@ -83,5 +83,6 @@ public class ColorSelectJPanel extends JPanel {
     // 静态方法用于设置当前选中的颜色
     public static void setCurrentSelectedColor(Color color) {
         currentSelectedColor = color;
+        selectedColor.setBackground(color);
     }
 }
