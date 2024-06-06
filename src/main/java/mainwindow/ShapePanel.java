@@ -12,15 +12,15 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
-public class ToolPanel extends JPanel {
-    private static JLabel selectedToolLabel;
-    private static JLabel selectedToolName;
+public class ShapePanel extends JPanel {
+    private JLabel selectedToolLabel;
+    private JLabel selectedToolName;
     private static String currentTool = ""; // 静态变量保存当前所选工具
     private static JSlider sizeSlider;
     private static JideButton selectedButton; // 用于保存当前选中的按钮
     private MainWindow mainWindow;
 
-    public ToolPanel(MainWindow mainWindow) {
+    public ShapePanel(MainWindow mainWindow) {
         // 创建一个柔和的边框
         Border softBorder = BorderFactory.createEtchedBorder(Color.LIGHT_GRAY, Color.GRAY);
         // 为整个面板添加边框
@@ -30,55 +30,17 @@ public class ToolPanel extends JPanel {
         this.mainWindow = mainWindow;
         // 左侧工具面板
         JPanel toolPanel = new JPanel(new GridLayout(2, 3,5,5));
-        JideButton pencilButton = addToolButton(toolPanel, "铅笔", "image/铅笔.png");
-        addToolButton(toolPanel, "填充", "image/填充.png");
-        addToolButton(toolPanel, "文本", "image/文本.png");
-        addToolButton(toolPanel, "橡皮擦", "image/橡皮擦.png");
-        addToolButton(toolPanel, "颜色提取", "image/颜色提取.png");
-        addToolButton(toolPanel, "放大镜", "image/放大镜.png");
-
-        // 中间显示面板
-        JPanel displayPanel = new JPanel(new BorderLayout());
+        JideButton button = addToolButton(toolPanel, "直线", "image/直线.png");
+        addToolButton(toolPanel, "椭圆", "image/椭圆.png");
+        addToolButton(toolPanel, "三角形", "image/三角形.png");
+        addToolButton(toolPanel, "矩形", "image/矩形.png");
+        addToolButton(toolPanel, "五边形", "image/五边形.png");
+        addToolButton(toolPanel, "五角星", "image/五角星.png");
         selectedToolLabel = new JLabel();
         selectedToolLabel.setHorizontalAlignment(SwingConstants.CENTER);
         selectedToolLabel.setVerticalAlignment(SwingConstants.CENTER);
         selectedToolName = new JLabel("", SwingConstants.CENTER);
-
-        displayPanel.add(selectedToolLabel, BorderLayout.CENTER);
-        displayPanel.add(selectedToolName, BorderLayout.SOUTH);
-
-        // 默认选中铅笔
-        selectedToolLabel.setIcon(new ImageIcon("image/铅笔.png"));
-        selectedToolName.setText("铅笔");
-        currentTool = "铅笔"; // 更新当前所选工具
-
-        // 设置铅笔按钮为选中状态
-        selectedButton = pencilButton;
-        selectedButton.setBorderPainted(true);
-        selectedButton.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-
-        // 下方进度条面板
-        JPanel sizePanel = new JPanel(new BorderLayout());
-        sizePanel.add(new JLabel("宽度:"), BorderLayout.WEST);
-        sizeSlider = new JSlider(1, 50, 1);
-        sizeSlider.setOrientation(SwingConstants.HORIZONTAL);
-        sizeSlider.setPaintTicks(true);
-        sizeSlider.setPaintLabels(true);
-        sizeSlider.setMajorTickSpacing(10);
-        sizeSlider.setMinorTickSpacing(1);
-        sizeSlider.setDoubleBuffered(true); // 启用双缓冲技术
-        sizeSlider.addChangeListener(new ChangeListener() {
-            @Override
-            public void stateChanged(ChangeEvent e) {
-                sizeSlider.repaint(); // 强制重绘滑动条
-            }
-        });
-        sizePanel.add(sizeSlider, BorderLayout.CENTER);
-
-        // 添加到主面板
         add(toolPanel, BorderLayout.WEST);
-        add(displayPanel, BorderLayout.CENTER);
-        add(sizePanel, BorderLayout.EAST);
     }
 
     private JideButton addToolButton(JPanel panel, String toolName, String iconPath) {
@@ -103,7 +65,7 @@ public class ToolPanel extends JPanel {
                 selectedButton.setBorderPainted(true);
                 selectedButton.setBorder(BorderFactory.createLineBorder(Color.BLACK));
                 mainWindow.flushText();
-                ShapePanel.transport();
+                ToolPanel.transport();
             }
         });
 
@@ -128,7 +90,7 @@ public class ToolPanel extends JPanel {
     }
 
     // 静态方法返回当前所使用的工具
-    public static String getCurrentTool() {
+    public static String getCurrentFigure() {
         return currentTool;
     }
 
@@ -136,14 +98,11 @@ public class ToolPanel extends JPanel {
     public static int getToolWidth() {
         return sizeSlider.getValue();
     }
-
     public static void transport(){
         // 清除当前选中按钮的边框
         if (selectedButton != null) {
             selectedButton.setBorderPainted(false);
         }
-        selectedToolLabel.setIcon(new ImageIcon("image/图形.png"));
-        selectedToolName.setText("图形");
-        currentTool = "图形";
+        currentTool = "工具";
     }
 }

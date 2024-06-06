@@ -2,6 +2,7 @@ package mainwindow;
 
 import java.awt.*;
 import javax.swing.*;
+import javax.swing.border.Border;
 
 import gladerUI.CircleButton;
 import java.awt.event.ActionEvent;
@@ -25,6 +26,10 @@ public class ColorSelectJPanel extends JPanel {
     };
 
     public ColorSelectJPanel() {
+        // 创建一个柔和的边框
+        Border softBorder = BorderFactory.createEtchedBorder(Color.LIGHT_GRAY, Color.GRAY);
+        // 为整个面板添加边框
+        setBorder(BorderFactory.createCompoundBorder(softBorder, BorderFactory.createEmptyBorder(5, 5, 5, 5)));
         setLayout(new BorderLayout()); // 设置1行2列的GridLayout，用于容纳两个列
         leftContainer = new JPanel(new BorderLayout()); // 左容器使用BorderLayout
         rightContainer = new JPanel(new BorderLayout()); // 右容器使用BorderLayout
@@ -55,6 +60,9 @@ public class ColorSelectJPanel extends JPanel {
                 Color clickedColor = clickedButton.getBackground();
                 setCurrentSelectedColor(clickedColor); // 设置当前选中的颜色
                 selectedColor.setBackground(clickedColor); // 设置左侧选定颜色
+                if(DrawingPanel.getDraggedTextArea() != null){
+                    DrawingPanel.getDraggedTextArea().setForeground(clickedColor);
+                }
             }
         };
 

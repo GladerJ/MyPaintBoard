@@ -1,4 +1,7 @@
-package mainwindow;
+package handler;
+
+import mainwindow.DrawingPanel;
+import mainwindow.ShowBarJPanel;
 
 public class ZoomHandler {
     private double imageScale = 1.0;
@@ -16,6 +19,7 @@ public class ZoomHandler {
         drawingPanel.updatePreferredSize(imageScale);
         drawingPanel.revalidate();
         drawingPanel.repaint();
+        ShowBarJPanel.setProportion((int) (Math.round(imageScale * 100)));
     }
 
     public void zoomOut(double zoomFactor) {
@@ -24,6 +28,7 @@ public class ZoomHandler {
         drawingPanel.updatePreferredSize(imageScale);
         drawingPanel.revalidate();
         drawingPanel.repaint();
+        ShowBarJPanel.setProportion((int) (Math.round(imageScale * 100)));
     }
 
     public double getImageScale() {
