@@ -11,6 +11,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ToolPanel extends JPanel {
     private static JLabel selectedToolLabel;
@@ -19,23 +21,30 @@ public class ToolPanel extends JPanel {
     private static JSlider sizeSlider;
     private static JideButton selectedButton; // 用于保存当前选中的按钮
     private MainWindow mainWindow;
+    private static Map<String, ImageIcon> toolIcons; // 保存工具图标的映射
+
+    public static ImageIcon getCurrentToolIcon() {
+        if(currentTool == "铅笔" || currentTool == "颜色提取")
+            return toolIcons.get(currentTool + "翻转");
+        if(currentTool == "图形" || currentTool == "填充") return null;
+        return toolIcons.get(currentTool);
+    }
 
     public ToolPanel(MainWindow mainWindow) {
-        // 创建一个柔和的边框
         Border softBorder = BorderFactory.createEtchedBorder(Color.LIGHT_GRAY, Color.GRAY);
-        // 为整个面板添加边框
         setBorder(BorderFactory.createCompoundBorder(softBorder, BorderFactory.createEmptyBorder(5, 5, 5, 5)));
         setLayout(new BorderLayout());
-
         this.mainWindow = mainWindow;
+        loadToolIcons(); // 加载工具图标
+
         // 左侧工具面板
-        JPanel toolPanel = new JPanel(new GridLayout(2, 3,5,5));
-        JideButton pencilButton = addToolButton(toolPanel, "铅笔", "image/铅笔.png");
-        addToolButton(toolPanel, "填充", "image/填充.png");
-        addToolButton(toolPanel, "文本", "image/文本.png");
-        addToolButton(toolPanel, "橡皮擦", "image/橡皮擦.png");
-        addToolButton(toolPanel, "颜色提取", "image/颜色提取.png");
-        addToolButton(toolPanel, "放大镜", "image/放大镜.png");
+        JPanel toolPanel = new JPanel(new GridLayout(2, 3, 5, 5));
+        addToolButton(toolPanel, "铅笔");
+        addToolButton(toolPanel, "填充");
+        addToolButton(toolPanel, "文本");
+        addToolButton(toolPanel, "橡皮擦");
+        addToolButton(toolPanel, "颜色提取");
+        addToolButton(toolPanel, "放大镜");
 
         // 中间显示面板
         JPanel displayPanel = new JPanel(new BorderLayout());
@@ -43,17 +52,17 @@ public class ToolPanel extends JPanel {
         selectedToolLabel.setHorizontalAlignment(SwingConstants.CENTER);
         selectedToolLabel.setVerticalAlignment(SwingConstants.CENTER);
         selectedToolName = new JLabel("", SwingConstants.CENTER);
-
         displayPanel.add(selectedToolLabel, BorderLayout.CENTER);
         displayPanel.add(selectedToolName, BorderLayout.SOUTH);
 
         // 默认选中铅笔
-        selectedToolLabel.setIcon(new ImageIcon("image/铅笔.png"));
-        selectedToolName.setText("铅笔");
-        currentTool = "铅笔"; // 更新当前所选工具
+        String defaultTool = "铅笔";
+        selectedToolLabel.setIcon(toolIcons.get(defaultTool));
+        selectedToolName.setText(defaultTool);
+        currentTool = defaultTool;
 
         // 设置铅笔按钮为选中状态
-        selectedButton = pencilButton;
+        selectedButton = (JideButton) toolPanel.getComponent(0);
         selectedButton.setBorderPainted(true);
         selectedButton.setBorder(BorderFactory.createLineBorder(Color.BLACK));
 
@@ -66,11 +75,11 @@ public class ToolPanel extends JPanel {
         sizeSlider.setPaintLabels(true);
         sizeSlider.setMajorTickSpacing(10);
         sizeSlider.setMinorTickSpacing(1);
-        sizeSlider.setDoubleBuffered(true); // 启用双缓冲技术
+        sizeSlider.setDoubleBuffered(true);
         sizeSlider.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
-                sizeSlider.repaint(); // 强制重绘滑动条
+                sizeSlider.repaint();
             }
         });
         sizePanel.add(sizeSlider, BorderLayout.CENTER);
@@ -81,20 +90,32 @@ public class ToolPanel extends JPanel {
         add(sizePanel, BorderLayout.EAST);
     }
 
-    private JideButton addToolButton(JPanel panel, String toolName, String iconPath) {
-        JideButton button = new JideButton();
-        button.setIcon(new ImageIcon(iconPath));
-        button.setPreferredSize(new Dimension(33, 33)); // 设置按钮大小为33x33
-        button.setContentAreaFilled(false); // 去掉按钮默认背景颜色
-        button.setBorderPainted(false); // 去掉按钮默认边框
+    private void loadToolIcons() {
+        toolIcons = new HashMap<>();
+        toolIcons.put("铅笔", new ImageIcon("image/铅笔.png"));
+        toolIcons.put("铅笔翻转", new ImageIcon("image/铅笔翻转.png"));
+        toolIcons.put("填充", new ImageIcon("image/填充.png"));
+        toolIcons.put("文本", new ImageIcon("image/文本.png"));
+        toolIcons.put("橡皮擦", new ImageIcon("image/橡皮擦.png"));
+        toolIcons.put("颜色提取", new ImageIcon("image/颜色提取.png"));
+        toolIcons.put("颜色提取翻转", new ImageIcon("image/颜色提取翻转.png"));
+        toolIcons.put("放大镜", new ImageIcon("image/放大镜.png"));
+        toolIcons.put("图形", new ImageIcon("image/图形.png"));
+    }
 
+    private void addToolButton(JPanel panel, String toolName) {
+        JideButton button = new JideButton();
+        button.setIcon(toolIcons.get(toolName));
+        button.setPreferredSize(new Dimension(33, 33));
+        button.setContentAreaFilled(false);
+        button.setBorderPainted(false);
         button.setToolTipText(toolName);
         button.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                selectedToolLabel.setIcon(new ImageIcon(iconPath));
+                selectedToolLabel.setIcon(toolIcons.get(toolName));
                 selectedToolName.setText(toolName);
-                currentTool = toolName; // 更新当前所选工具
+                currentTool = toolName;
 
                 if (selectedButton != null) {
                     selectedButton.setBorderPainted(false);
@@ -107,7 +128,6 @@ public class ToolPanel extends JPanel {
             }
         });
 
-        // 添加鼠标事件监听器
         button.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseEntered(MouseEvent e) {
@@ -124,25 +144,21 @@ public class ToolPanel extends JPanel {
         });
 
         panel.add(button);
-        return button;
     }
 
-    // 静态方法返回当前所使用的工具
     public static String getCurrentTool() {
         return currentTool;
     }
 
-    // 获取当前所选工具的宽度
     public static int getToolWidth() {
         return sizeSlider.getValue();
     }
 
-    public static void transport(){
-        // 清除当前选中按钮的边框
+    public static void transport() {
         if (selectedButton != null) {
             selectedButton.setBorderPainted(false);
         }
-        selectedToolLabel.setIcon(new ImageIcon("image/图形.png"));
+        selectedToolLabel.setIcon(toolIcons.get("图形"));
         selectedToolName.setText("图形");
         currentTool = "图形";
     }

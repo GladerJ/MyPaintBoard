@@ -13,6 +13,15 @@ public class ZoomHandler {
         this.drawingPanel = drawingPanel;
     }
 
+    public void reset(){
+        imageScale = 1;
+        imageScale = Math.round(imageScale * 10) / 10.0;
+        drawingPanel.updatePreferredSize(imageScale);
+        drawingPanel.revalidate();
+        drawingPanel.repaint();
+        ShowBarJPanel.setProportion((int) (Math.round(imageScale * 100)));
+    }
+
     public void zoomIn(double zoomFactor) {
         imageScale = Math.min(imageScale * zoomFactor, MAX_SCALE);
         imageScale = Math.round(imageScale * 10) / 10.0;

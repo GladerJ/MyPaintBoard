@@ -1,6 +1,7 @@
 package mainwindow;
 
 import com.jidesoft.swing.JideButton;
+import handler.ZoomHandler;
 
 import javax.swing.*;
 import javax.swing.border.Border;
@@ -16,11 +17,12 @@ public class ShapePanel extends JPanel {
     private JLabel selectedToolLabel;
     private JLabel selectedToolName;
     private static String currentTool = ""; // 静态变量保存当前所选工具
-    private static JSlider sizeSlider;
     private static JideButton selectedButton; // 用于保存当前选中的按钮
     private MainWindow mainWindow;
+    private DrawingPanel drawingPanel;
 
-    public ShapePanel(MainWindow mainWindow) {
+    public ShapePanel(MainWindow mainWindow,DrawingPanel drawingPanel) {
+        this.drawingPanel = drawingPanel;
         // 创建一个柔和的边框
         Border softBorder = BorderFactory.createEtchedBorder(Color.LIGHT_GRAY, Color.GRAY);
         // 为整个面板添加边框
@@ -29,13 +31,14 @@ public class ShapePanel extends JPanel {
 
         this.mainWindow = mainWindow;
         // 左侧工具面板
-        JPanel toolPanel = new JPanel(new GridLayout(2, 3,5,5));
+        JPanel toolPanel = new JPanel(new GridLayout(2, 4,5,5));
         JideButton button = addToolButton(toolPanel, "直线", "image/直线.png");
         addToolButton(toolPanel, "椭圆", "image/椭圆.png");
         addToolButton(toolPanel, "三角形", "image/三角形.png");
         addToolButton(toolPanel, "矩形", "image/矩形.png");
         addToolButton(toolPanel, "五边形", "image/五边形.png");
         addToolButton(toolPanel, "五角星", "image/五角星.png");
+        addToolButton(toolPanel, "裁剪", "image/裁剪.png");
         selectedToolLabel = new JLabel();
         selectedToolLabel.setHorizontalAlignment(SwingConstants.CENTER);
         selectedToolLabel.setVerticalAlignment(SwingConstants.CENTER);
@@ -57,6 +60,11 @@ public class ShapePanel extends JPanel {
                 selectedToolLabel.setIcon(new ImageIcon(iconPath));
                 selectedToolName.setText(toolName);
                 currentTool = toolName; // 更新当前所选工具
+
+                if(toolName == "裁剪"){
+                    ZoomHandler zoomTool = drawingPanel.getZoomTool();
+                    zoomTool.reset();
+                }
 
                 if (selectedButton != null) {
                     selectedButton.setBorderPainted(false);
@@ -94,10 +102,6 @@ public class ShapePanel extends JPanel {
         return currentTool;
     }
 
-    // 获取当前所选工具的宽度
-    public static int getToolWidth() {
-        return sizeSlider.getValue();
-    }
     public static void transport(){
         // 清除当前选中按钮的边框
         if (selectedButton != null) {

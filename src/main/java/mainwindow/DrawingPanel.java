@@ -1,14 +1,20 @@
 package mainwindow;
 
+import gladerUI.DraggedImageJPanel;
 import gladerUI.DraggedTextArea;
 import gladerUI.drawer.*;
 import handler.MouseHandler;
 import handler.ZoomHandler;
+import utils.ClipboardUtil;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.Stack;
 
 public class DrawingPanel extends JPanel {
@@ -22,6 +28,7 @@ public class DrawingPanel extends JPanel {
     private int resizeHandleSize = 10;
     private Cursor defaultCursor = Cursor.getDefaultCursor();
     private Cursor resizeCursor = Cursor.getPredefinedCursor(Cursor.SE_RESIZE_CURSOR);
+    private DraggedImageJPanel draggedImageJPanel;
 
     private static DraggedTextArea draggedTextArea;
 
@@ -34,6 +41,10 @@ public class DrawingPanel extends JPanel {
     }
 
     private Point originalTextAreaPosition;
+
+    public ZoomHandler getZoomTool() {
+        return zoomHandler;
+    }
 
     public DrawingPanel(int panelWidth, int panelHeight) {
         this.panelWidth = panelWidth;
@@ -51,7 +62,7 @@ public class DrawingPanel extends JPanel {
         addMouseWheelListener(new MouseWheelListener() {
             @Override
             public void mouseWheelMoved(MouseWheelEvent e) {
-                if (e.isControlDown()) {
+                if (e.isControlDown() && !ShapePanel.getCurrentFigure().equals("裁剪")) {
                     if (e.getWheelRotation() < 0) {
                         zoomHandler.zoomIn(1.1);
                     } else {
@@ -144,7 +155,7 @@ public class DrawingPanel extends JPanel {
         }
 
         // 创建新的拖动文本框
-        draggedTextArea = DraggedTextArea.createDraggedTextArea(zoomHandler.getImageScale());
+        draggedTextArea = new DraggedTextArea(zoomHandler.getImageScale());
         draggedTextArea.setForeground(ColorSelectJPanel.getCurrentSelectedColor());
         draggedTextArea.setLocation((int) (x * zoomHandler.getImageScale()), (int) (y * zoomHandler.getImageScale()));
         add(draggedTextArea);
@@ -354,13 +365,13 @@ public class DrawingPanel extends JPanel {
             lineDrawer.drawPreview(g2d);
         }
 
-        if(isDrawingTriangle()){
+        if (isDrawingTriangle()) {
             g2d.setColor(ColorSelectJPanel.getCurrentSelectedColor());
             g2d.setStroke(new BasicStroke(ToolPanel.getToolWidth()));
             triangleDrawer.drawPreview(g2d);
         }
 
-        if (isDrawingEllipse()){
+        if (isDrawingEllipse()) {
             g2d.setColor(ColorSelectJPanel.getCurrentSelectedColor());
             g2d.setStroke(new BasicStroke(ToolPanel.getToolWidth()));
             ellipseDrawer.drawPreview(g2d);
@@ -385,6 +396,13 @@ public class DrawingPanel extends JPanel {
             g2d.setColor(ColorSelectJPanel.getCurrentSelectedColor());
             g2d.setStroke(new BasicStroke(ToolPanel.getToolWidth()));
             starDrawer.drawPreview(g2d);
+        }
+
+        //绘制选区区域的矩形绘制
+        if (selectRectangle.isDrawing()) {
+            g2d.setColor(Color.BLACK);
+            g2d.setStroke(new BasicStroke(1));
+            selectRectangle.drawPreview(g2d);
         }
 
         g2d.dispose();
@@ -430,7 +448,8 @@ public class DrawingPanel extends JPanel {
     }
 
     public void startEllipseDrawing(int x, int y) {
-        ellipseDrawer.startDrawing(x, y, ColorSelectJPanel.getCurrentSelectedColor(), ToolPanel.getToolWidth());
+        int width = ToolPanel.getToolWidth();
+        ellipseDrawer.startDrawing(x, y, ColorSelectJPanel.getCurrentSelectedColor(), width);
     }
 
     public void finishEllipseDrawing(int x, int y) {
@@ -450,6 +469,7 @@ public class DrawingPanel extends JPanel {
         return rectangleDrawer.isDrawing();
     }
 
+
     public void startRectangleDrawing(int x, int y) {
         rectangleDrawer.startDrawing(x, y, ColorSelectJPanel.getCurrentSelectedColor(), ToolPanel.getToolWidth());
     }
@@ -463,6 +483,81 @@ public class DrawingPanel extends JPanel {
         rectangleDrawer.previewDrawing(startX, startY, x, y);
         repaint();
     }
+
+    //绘制选区区域的矩形对象
+    private final RectangleDrawer selectRectangle = new RectangleDrawer();
+
+    public boolean isDrawingSelectRectangle() {
+        return selectRectangle.isDrawing();
+    }
+
+    public void startSelectRectangleDrawing(int x, int y) {
+        selectRectangle.startDrawing(x, y, Color.BLACK, 1);
+    }
+
+    // 创建一个选择后的框可用于拖动
+    public void createDraggedImageJPanel(int x, int y, int width, int height,BufferedImage image) {
+        if (x < 0 || x >= panelWidth || y < 0 || y >= panelHeight) {
+            return; // 如果不在范围内，直接返回
+        }
+
+        int scale = (int) zoomHandler.getImageScale();
+        // 创建一个新的 BufferedImage
+        BufferedImage croppedImage = null;
+        if(image == null){
+            croppedImage = new BufferedImage(width * scale, height * scale, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g2d = croppedImage.createGraphics();
+            g2d.drawImage(bufferImage, 0, 0, width * scale, height * scale, x * scale, y * scale, (x + width) * scale, (y + height) * scale, null);
+            g2d.dispose();
+        }
+        else{
+            croppedImage = image;
+        }
+        draggedImageJPanel = new DraggedImageJPanel(croppedImage);
+        draggedImageJPanel.setBounds(x * scale, y * scale, width * scale, height * scale);
+        add(draggedImageJPanel);
+
+        revalidate();
+        repaint();
+    }
+
+
+    public void setDraggedImageJPanel(DraggedImageJPanel draggedImageJPanel) {
+        this.draggedImageJPanel = draggedImageJPanel;
+    }
+
+    public DraggedImageJPanel getDraggedImageJPanel() {
+        return draggedImageJPanel;
+    }
+
+    public void finishSelectRectangleDrawing(int x, int y) {
+        // selectRectangle.finishDrawing(x, y, bufferGraphics);
+        int x1 = selectRectangle.getStartX(), x2 = selectRectangle.getEndX();
+        int y1 = selectRectangle.getStartY(), y2 = selectRectangle.getEndY();
+        if (x1 > x2) {
+            int tmp = x1;
+            x1 = x2;
+            x2 = tmp;
+        }
+        if (y1 > y2) {
+            int tmp = y1;
+            y1 = y2;
+            y2 = tmp;
+        }
+        if (x2 - x1 <= 0 || y2 - y1 <= 0) return;
+        createDraggedImageJPanel(x1, y1, x2 - x1, y2 - y1,null);
+        selectRectangle.reset(); // 重置选区矩形的绘制状态
+        OperatorPanel.getConfirm().setEnabled(true);
+        clearRectangle(x1, y1, x2 - x1, y2 - y1);
+        repaint();
+    }
+
+    public void previewSelectRectangleDrawing(int startX, int startY, int x, int y) {
+        if (draggedImageJPanel != null) return;
+        selectRectangle.previewDrawing(startX, startY, x, y);
+        repaint();
+    }
+
 
     // 绘制五边形
     private final PentagonDrawer pentagonDrawer = new PentagonDrawer();
@@ -567,6 +662,7 @@ public class DrawingPanel extends JPanel {
     private Stack<BufferedImage> undoStack = new Stack<>();
     private Stack<BufferedImage> redoStack = new Stack<>();
     private final int MAX_UNDO = 30;
+
     public void saveStateToUndoStack() {
         if (bufferImage != null) {
             BufferedImage imageCopy = new BufferedImage(bufferImage.getWidth(), bufferImage.getHeight(), bufferImage.getType());
@@ -579,19 +675,18 @@ public class DrawingPanel extends JPanel {
             }
             undoStack.push(imageCopy);
         }
-        if(redoStack.size() != 0){
+        if (redoStack.size() != 0) {
             OperatorPanel.getRedoButton().setEnabled(true);
-        }
-        else{
+        } else {
             OperatorPanel.getRedoButton().setEnabled(false);
         }
-        if(undoStack.size() != 0){
+        if (undoStack.size() != 0) {
             OperatorPanel.getUndoButton().setEnabled(true);
-        }
-        else{
+        } else {
             OperatorPanel.getUndoButton().setEnabled(false);
         }
     }
+
     public void redo() {
         if (!redoStack.isEmpty()) {
             undoStack.push(bufferImage); // 将当前状态保存到撤销栈
@@ -600,16 +695,14 @@ public class DrawingPanel extends JPanel {
             bufferGraphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON); // 启用抗锯齿
             repaint();
         }
-        if(redoStack.size() != 0){
+        if (redoStack.size() != 0) {
             OperatorPanel.getRedoButton().setEnabled(true);
-        }
-        else{
+        } else {
             OperatorPanel.getRedoButton().setEnabled(false);
         }
-        if(undoStack.size() != 0){
+        if (undoStack.size() != 0) {
             OperatorPanel.getUndoButton().setEnabled(true);
-        }
-        else{
+        } else {
             OperatorPanel.getUndoButton().setEnabled(false);
         }
     }
@@ -622,16 +715,14 @@ public class DrawingPanel extends JPanel {
             bufferGraphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON); // 启用抗锯齿
             repaint();
         }
-        if(redoStack.size() != 0){
+        if (redoStack.size() != 0) {
             OperatorPanel.getRedoButton().setEnabled(true);
-        }
-        else{
+        } else {
             OperatorPanel.getRedoButton().setEnabled(false);
         }
-        if(undoStack.size() != 0){
+        if (undoStack.size() != 0) {
             OperatorPanel.getUndoButton().setEnabled(true);
-        }
-        else{
+        } else {
             OperatorPanel.getUndoButton().setEnabled(false);
         }
     }
@@ -660,7 +751,7 @@ public class DrawingPanel extends JPanel {
             }
         });
 
-        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control shift Z"), "redo");
+        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control Y"), "redo");
         getActionMap().put("redo", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -668,9 +759,74 @@ public class DrawingPanel extends JPanel {
             }
         });
 
+
+        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control X"), "delete");
+        getActionMap().put("delete", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (draggedImageJPanel != null) {
+                    saveStateToUndoStack();
+                    BufferedImage image = draggedImageJPanel.getImage();
+                    ClipboardUtil.copyImageToClipboard(image);
+                    remove(draggedImageJPanel);
+                    draggedImageJPanel = null;
+                    OperatorPanel.getConfirm().setEnabled(false);
+                    repaint();
+                }
+            }
+        });
+
+        getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("control V"), "paste");
+        getActionMap().put("paste", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if(draggedImageJPanel != null) return;
+                try {
+                    BufferedImage image = ClipboardUtil.toBufferedImage(ClipboardUtil.getImageFromClipboard());
+                    if (image != null) {
+                        OperatorPanel.getConfirm().setEnabled(true);
+                        createDraggedImageJPanel(0, 0, image.getWidth(), image.getHeight(),image);
+                        repaint();
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
+
     }
 
+    //填入左上角坐标，长和宽，将指定区域的图片进行截取
+    public BufferedImage captureRectangleImage(int x, int y, int width, int height) throws IOException {
+        int scale = (int) zoomHandler.getImageScale();
+        BufferedImage croppedImage = bufferImage.getSubimage(x * scale, y * scale, width * scale, height * scale);
+        return croppedImage;
+    }
 
+    //删除这个区域里的数据
+    public void clearRectangle(int x, int y, int width, int height) {
+        if (bufferImage != null) {
+            saveStateToUndoStack();
+            Graphics2D g2d = bufferImage.createGraphics();
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON); // 启用抗锯齿
+            g2d.setColor(Color.WHITE); // 可根据需求更改颜色
+            g2d.fillRect(x, y, width, height);
+            g2d.dispose();
+            repaint();
+        }
+    }
+
+    //在指定区域绘制image
+    public void drawImageInRectangle(int x, int y, int width, int height, BufferedImage image) {
+        if (bufferImage != null && image != null) {
+            saveStateToUndoStack();
+            Graphics2D g2d = bufferImage.createGraphics();
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON); // 启用抗锯齿
+            g2d.drawImage(image, x, y, width, height, null);
+            g2d.dispose();
+            repaint();
+        }
+    }
 
 
 }

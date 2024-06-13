@@ -1,5 +1,7 @@
 package mainwindow;
 
+import gladerUI.DraggedImageJPanel;
+
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
@@ -10,6 +12,13 @@ import javax.swing.border.Border;
 public class OperatorPanel extends JPanel {
     private static JButton undoButton, redoButton;
     private DrawingPanel drawingPanel;
+    private MainWindow mainWindow;
+
+    private static JButton confirm;
+
+    public static JButton getConfirm() {
+        return confirm;
+    }
 
     public static JButton getUndoButton() {
         return undoButton;
@@ -27,7 +36,8 @@ public class OperatorPanel extends JPanel {
         OperatorPanel.redoButton = redoButton;
     }
 
-    public OperatorPanel(DrawingPanel drawingPanel) {
+    public OperatorPanel(DrawingPanel drawingPanel,MainWindow mainWindow) {
+        this.mainWindow = mainWindow;
         // 创建一个柔和的边框
         Border softBorder = BorderFactory.createEtchedBorder(Color.LIGHT_GRAY, Color.GRAY);
         // 为整个面板添加边框
@@ -55,7 +65,7 @@ public class OperatorPanel extends JPanel {
         add(clearButton);
         clearButton.addActionListener(e -> {
             int response = JOptionPane.showConfirmDialog(
-                    this,
+                    mainWindow,
                     "确定要清空画布吗？",
                     "确认清空",
                     JOptionPane.YES_NO_OPTION,
@@ -64,6 +74,19 @@ public class OperatorPanel extends JPanel {
             if (response == JOptionPane.YES_OPTION) {
                 drawingPanel.clear();
             }
+        });
+
+        // 创建将选择框内容嵌入画板的操控按钮
+        confirm = createButton("image/嵌入.png");
+        add(confirm);
+        confirm.setEnabled(false);
+        confirm.addActionListener(e->{
+            DraggedImageJPanel draggedImageJPanel = drawingPanel.getDraggedImageJPanel();
+            drawingPanel.drawImageInRectangle(draggedImageJPanel.getX(),draggedImageJPanel.getY()
+            ,draggedImageJPanel.getWidth(),draggedImageJPanel.getHeight(),draggedImageJPanel.getImage());
+            drawingPanel.remove(draggedImageJPanel);
+            drawingPanel.setDraggedImageJPanel(null);
+            confirm.setEnabled(false);
         });
     }
 

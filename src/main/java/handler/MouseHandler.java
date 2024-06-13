@@ -6,10 +6,13 @@ import mainwindow.ShapePanel;
 import mainwindow.ToolPanel;
 import utils.FillAlgorithm;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 
 public class MouseHandler extends MouseAdapter {
     private final DrawingPanel drawingPanel;
@@ -18,18 +21,32 @@ public class MouseHandler extends MouseAdapter {
         this.drawingPanel = drawingPanel;
     }
 
+    private void updateCursor() {
+        ImageIcon toolIcon = ToolPanel.getCurrentToolIcon();
+        if (toolIcon != null) {
+            Cursor customCursor = Toolkit.getDefaultToolkit().createCustomCursor(
+                    toolIcon.getImage(),
+                    new Point(0, 0),
+                    "custom cursor"
+            );
+            drawingPanel.setCursor(customCursor);
+        } else {
+            drawingPanel.setCursor(Cursor.getDefaultCursor());
+        }
+    }
+
     @Override
     public void mousePressed(MouseEvent e) {
         if (drawingPanel.isInResizeHandle(e.getPoint())) {
             drawingPanel.setResizing(true);
             drawingPanel.setCursor(drawingPanel.getResizeCursor());
         } else {
+            updateCursor();  // 保持自定义光标
             Point unscaledPoint = drawingPanel.unscalePoint(e.getPoint());
             drawingPanel.setPrevX(unscaledPoint.x);
             drawingPanel.setPrevY(unscaledPoint.y);
-
-            if(unscaledPoint.x < 0 || unscaledPoint.x >= drawingPanel.getPanelWidth()
-            || unscaledPoint.y < 0 || unscaledPoint.y >= drawingPanel.getPanelHeight()){
+            if (unscaledPoint.x < 0 || unscaledPoint.x >= drawingPanel.getPanelWidth()
+                    || unscaledPoint.y < 0 || unscaledPoint.y >= drawingPanel.getPanelHeight()) {
                 return;
             }
 
@@ -47,7 +64,6 @@ public class MouseHandler extends MouseAdapter {
                 ColorSelectJPanel.setCurrentSelectedColor(pickedColor);
             } else if ("文本".equals(currentTool)) {
                 drawingPanel.createDraggedTextArea(unscaledPoint.x, unscaledPoint.y);
-
             } else if ("放大镜".equals(currentTool)) {
                 if (SwingUtilities.isLeftMouseButton(e)) {
                     DrawingPanel.getZoomHandler().zoomIn(1.1);
@@ -55,7 +71,7 @@ public class MouseHandler extends MouseAdapter {
                     DrawingPanel.getZoomHandler().zoomOut(1.1);
                 }
             } else {
-                drawingPanel.saveStateToUndoStack(); // 在绘图操作开始前保存状态
+                drawingPanel.saveStateToUndoStack();
                 String currentFigure = ShapePanel.getCurrentFigure();
                 unscaledPoint = drawingPanel.unscalePoint(e.getPoint());
                 if ("直线".equals(currentFigure)) {
@@ -70,6 +86,8 @@ public class MouseHandler extends MouseAdapter {
                     drawingPanel.startPentagonDrawing(unscaledPoint.x, unscaledPoint.y);
                 } else if ("五角星".equals(currentFigure)) {
                     drawingPanel.startStarDrawing(unscaledPoint.x, unscaledPoint.y);
+                } else if("裁剪".equals(currentFigure)){
+                    drawingPanel.startSelectRectangleDrawing(unscaledPoint.x, unscaledPoint.y);
                 }
             }
         }
@@ -80,31 +98,29 @@ public class MouseHandler extends MouseAdapter {
         if (drawingPanel.isDrawingLine()) {
             Point unscaledPoint = drawingPanel.unscalePoint(e.getPoint());
             drawingPanel.finishLineDrawing(unscaledPoint.x, unscaledPoint.y);
-          //  drawingPanel.saveStateToUndoStack(); // 保存状态
         } else if (drawingPanel.isDrawingTriangle()) {
             Point unscaledPoint = drawingPanel.unscalePoint(e.getPoint());
             drawingPanel.finishTriangleDrawing(unscaledPoint.x, unscaledPoint.y);
-          //  drawingPanel.saveStateToUndoStack(); // 保存状态
         } else if (drawingPanel.isDrawingEllipse()) {
             Point unscaledPoint = drawingPanel.unscalePoint(e.getPoint());
             drawingPanel.finishEllipseDrawing(unscaledPoint.x, unscaledPoint.y);
-          //  drawingPanel.saveStateToUndoStack(); // 保存状态
         } else if (drawingPanel.isDrawingRectangle()) {
             Point unscaledPoint = drawingPanel.unscalePoint(e.getPoint());
             drawingPanel.finishRectangleDrawing(unscaledPoint.x, unscaledPoint.y);
-          //  drawingPanel.saveStateToUndoStack(); // 保存状态
         } else if (drawingPanel.isDrawingPentagon()) {
             Point unscaledPoint = drawingPanel.unscalePoint(e.getPoint());
             drawingPanel.finishPentagonDrawing(unscaledPoint.x, unscaledPoint.y);
-         //   drawingPanel.saveStateToUndoStack(); // 保存状态
         } else if (drawingPanel.isDrawingStar()) {
             Point unscaledPoint = drawingPanel.unscalePoint(e.getPoint());
             drawingPanel.finishStarDrawing(unscaledPoint.x, unscaledPoint.y);
-          //  drawingPanel.saveStateToUndoStack(); // 保存状态
+        } else if(drawingPanel.isDrawingSelectRectangle()){
+            Point unscaledPoint = drawingPanel.unscalePoint(e.getPoint());
+            drawingPanel.finishSelectRectangleDrawing(unscaledPoint.x, unscaledPoint.y);
         }
         drawingPanel.setResizing(false);
-        drawingPanel.setCursor(drawingPanel.getDefaultCursor());
+        updateCursor(); // 保持自定义光标
     }
+
 
     @Override
     public void mouseDragged(MouseEvent e) {
@@ -145,6 +161,8 @@ public class MouseHandler extends MouseAdapter {
                     drawingPanel.previewPentagonDrawing(drawingPanel.getPrevX(), drawingPanel.getPrevY(), drawingPanel.getCurrX(), drawingPanel.getCurrY());
                 } else if ("五角星".equals(currentFigure)) {
                     drawingPanel.previewStarDrawing(drawingPanel.getPrevX(), drawingPanel.getPrevY(), drawingPanel.getCurrX(), drawingPanel.getCurrY());
+                } else if("裁剪".equals(currentFigure)){
+                    drawingPanel.previewSelectRectangleDrawing(drawingPanel.getPrevX(), drawingPanel.getPrevY(), drawingPanel.getCurrX(), drawingPanel.getCurrY());
                 }
             }
 
@@ -161,8 +179,16 @@ public class MouseHandler extends MouseAdapter {
         if (drawingPanel.isInResizeHandle(e.getPoint())) {
             drawingPanel.setCursor(drawingPanel.getResizeCursor());
         } else {
-            drawingPanel.setCursor(drawingPanel.getDefaultCursor());
+            updateCursor();  // 这里不再重复设置默认光标
         }
         drawingPanel.updateMousePosition(e.getPoint());
+    }
+    @Override
+    public void mouseEntered(MouseEvent e) {
+        updateCursor();  // 当鼠标进入画板时设置自定义光标
+    }
+    @Override
+    public void mouseExited(MouseEvent e) {
+        drawingPanel.setCursor(Cursor.getDefaultCursor());  // 当鼠标离开画板时恢复默认光标
     }
 }

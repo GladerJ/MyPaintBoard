@@ -1,5 +1,8 @@
 package mainwindow;
 
+import com.jtattoo.plaf.acryl.AcrylLookAndFeel;
+import gladerUI.DraggedImageJPanel;
+
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
@@ -10,6 +13,7 @@ import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.Properties;
 
 public class MainWindow extends JFrame {
     private JMenuBar menuBar;
@@ -20,10 +24,9 @@ public class MainWindow extends JFrame {
     private JMenuItem flipHorizontalItem;
     private JMenuItem flipVerticalItem;
     private JMenuItem flipBothItem;
-    private JMenu editMenu;
-    private JMenuItem editItem1;
-    private JMenuItem editItem2;
-    private JMenuItem editItem3;
+    private JMenu helpMenu;
+    private JMenuItem helpItem1;
+    private JMenuItem helpItem2;
     private ColorSelectJPanel colorSelectJPanel;
     private JScrollPane scrollPane;
     private ToolPanel toolPanel;
@@ -99,8 +102,8 @@ public class MainWindow extends JFrame {
     }
 
     private void createShapePanel() {
-        shapePanel = new ShapePanel(this);
-        shapePanel.setBounds(460, 10, 125, 80);
+        shapePanel = new ShapePanel(this,drawingPanel);
+        shapePanel.setBounds(460, 10, 160, 80);
         this.add(shapePanel);
     }
 
@@ -114,14 +117,14 @@ public class MainWindow extends JFrame {
     // 创建颜色选择面板
     private void createColorSelectJPanel() {
         colorSelectJPanel = new ColorSelectJPanel();
-        colorSelectJPanel.setBounds(460 + 135, 10, 380, 80);
+        colorSelectJPanel.setBounds(460 + 170, 10, 380, 80);
         this.add(colorSelectJPanel);
         ColorSelectJPanel.setCurrentSelectedColor(Color.BLACK);
     }
 
     private void createOperatorPanel(){
-        operatorPanel = new OperatorPanel(drawingPanel);
-        operatorPanel.setBounds(460 + 135 + 395,10,120,80);
+        operatorPanel = new OperatorPanel(drawingPanel,this);
+        operatorPanel.setBounds(460 + 135 + 395 + 30,10,120,80);
         this.add(operatorPanel);
     }
 
@@ -136,6 +139,32 @@ public class MainWindow extends JFrame {
         SwingUtilities.invokeLater(() -> drawingPanel.scrollToCenter());
     }
 
+    private void openHelpBook(){
+        if (Desktop.isDesktopSupported()) {
+            try {
+                File helpFile = new File("HelpBook/帮助手册.pdf");
+                if (helpFile.exists()) {
+                    Desktop.getDesktop().open(helpFile);
+                } else {
+                    JOptionPane.showMessageDialog(this,
+                            "帮助手册文件未找到。",
+                            "错误",
+                            JOptionPane.ERROR_MESSAGE);
+                }
+
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this,
+                        "无法打开帮助手册文件。",
+                        "错误",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        } else {
+            JOptionPane.showMessageDialog(this,
+                    "当前系统不支持打开 PDF 文件。",
+                    "错误",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
     // 创建菜单的方法
     private void createMenuBar() {
         // 创建文件菜单及其子菜单项
@@ -193,17 +222,32 @@ public class MainWindow extends JFrame {
         });
 
         // 创建编辑菜单及其子菜单项
-        editMenu = new JMenu("编辑");
-        editItem1 = new JMenuItem("剪切");
-        editItem2 = new JMenuItem("复制");
-        editItem3 = new JMenuItem("粘贴");
-        editMenu.add(editItem1);
-        editMenu.add(editItem2);
-        editMenu.add(editItem3);
+        helpMenu = new JMenu("帮助");
+        helpItem1 = new JMenuItem("帮助手册");
+        helpItem2 = new JMenuItem("关于");
+        helpMenu.add(helpItem1);
+        helpMenu.add(helpItem2);
         // 将菜单添加到菜单栏
         menuBar.add(fileMenu);
         menuBar.add(viewMenu);
-        menuBar.add(editMenu);
+        menuBar.add(helpMenu);
+        helpItem1.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                openHelpBook();
+            }
+        });
+
+        helpItem2.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JOptionPane.showMessageDialog(MainWindow.this,
+                        "作者：李杰,李鹏令,张子炫\n指导老师:高珊珊\n版本:version 0.0.1",
+                        "关于",
+                        JOptionPane.INFORMATION_MESSAGE);
+            }
+        });
+
     }
 
     private void openImage() {
@@ -263,11 +307,15 @@ public class MainWindow extends JFrame {
 
     // 主方法
     public static void main(String[] args) {
-        // 设置全局 UI 缩放比例
-        System.setProperty("sun.java2d.uiScale", "1.0");
-        // 启用高DPI感知
-        System.setProperty("sun.java2d.dpiaware", "true");
-        System.setProperty("sun.java2d.ddscale", "true");
+        try {
+//            // 设置全局 UI 缩放比例
+            System.setProperty("sun.java2d.uiScale", "1.0");
+            // 启用高DPI感知
+            System.setProperty("sun.java2d.dpiaware", "true");
+            System.setProperty("sun.java2d.ddscale", "true");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         setUIFont(new javax.swing.plaf.FontUIResource("宋体", Font.PLAIN, 14));
         SwingUtilities.invokeLater(() -> {
             new MainWindow();

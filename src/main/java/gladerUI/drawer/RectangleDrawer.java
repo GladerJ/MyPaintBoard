@@ -32,4 +32,13 @@ public class RectangleDrawer extends ShapeDrawer {
             g2d.drawRect(leftX, topY, width, height);
         }
     }
+    public void reset() {
+        this.startX = 0;
+        this.startY = 0;
+        this.endX = 0;
+        this.endY = 0;
+        this.color = null;
+        this.strokeWidth = 0;
+        drawing = false;
+    }
 }
