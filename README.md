@@ -30,5 +30,7 @@
 #### 主界面如下
 ![image](https://github.com/GladerJ/MyPaintBoard/assets/91355184/b7046486-bbe4-4867-a563-c86549a4d4d4)
 
+使用JDK15及以上运行
+
 
 
