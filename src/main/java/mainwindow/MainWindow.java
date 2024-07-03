@@ -2,6 +2,7 @@ package mainwindow;
 
 import com.jtattoo.plaf.acryl.AcrylLookAndFeel;
 import gladerUI.DraggedImageJPanel;
+import window3d.Simple3DApp;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -32,6 +33,7 @@ public class MainWindow extends JFrame {
     private ToolPanel toolPanel;
     private ShapePanel shapePanel;
     private OperatorPanel operatorPanel;
+    private JMenuItem item3d;
 
     public static int getWindowWidth() {
         return width;
@@ -171,8 +173,10 @@ public class MainWindow extends JFrame {
         fileMenu = new JMenu("文件");
         openItem = new JMenuItem("打开");
         saveItem = new JMenuItem("保存");
+        item3d = new JMenuItem("3D演示");
         fileMenu.add(openItem);
         fileMenu.add(saveItem);
+        fileMenu.add(item3d);
 
         // 为打开菜单项添加事件处理程序
         openItem.addActionListener(new ActionListener() {
@@ -187,6 +191,14 @@ public class MainWindow extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 saveCanvasAsImage();
+            }
+        });
+
+        // 打开3d演示功能
+        item3d.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                new Simple3DApp();
             }
         });
 

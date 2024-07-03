@@ -36,6 +36,16 @@ public class DrawingPanel extends JPanel {
         return zoomHandler;
     }
 
+    //滑轮滚动条
+    private JScrollPane getScrollPane() {
+        Container parent = this.getParent();
+        while (!(parent instanceof JScrollPane)) {
+            parent = parent.getParent();
+        }
+        return (JScrollPane) parent;
+    }
+
+
     public static void setZoomHandler(ZoomHandler zoomHandler) {
         DrawingPanel.zoomHandler = zoomHandler;
     }
@@ -67,6 +77,14 @@ public class DrawingPanel extends JPanel {
                         zoomHandler.zoomIn(1.1);
                     } else {
                         zoomHandler.zoomOut(1.1);
+                    }
+                }
+                else if(!e.isControlDown()){
+                    JScrollPane scrollPane = getScrollPane();
+                    if (scrollPane != null) {
+                        JScrollBar verticalScrollBar = scrollPane.getVerticalScrollBar();
+                        int amount = e.getUnitsToScroll() * verticalScrollBar.getUnitIncrement();
+                        verticalScrollBar.setValue(verticalScrollBar.getValue() + amount);
                     }
                 }
             }
@@ -764,7 +782,7 @@ public class DrawingPanel extends JPanel {
         getActionMap().put("delete", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if (draggedImageJPanel != null) {
+                if (ShapePanel.getCurrentFigure().equals("裁剪") && draggedImageJPanel != null) {
                     saveStateToUndoStack();
                     BufferedImage image = draggedImageJPanel.getImage();
                     ClipboardUtil.copyImageToClipboard(image);
@@ -780,7 +798,7 @@ public class DrawingPanel extends JPanel {
         getActionMap().put("paste", new AbstractAction() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                if(draggedImageJPanel != null) return;
+                if(!ShapePanel.getCurrentFigure().equals("裁剪") || draggedImageJPanel != null) return;
                 try {
                     BufferedImage image = ClipboardUtil.toBufferedImage(ClipboardUtil.getImageFromClipboard());
                     if (image != null) {
